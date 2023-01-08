@@ -1,8 +1,14 @@
-import { sendUnaryData, ServerDuplexStream, ServerReadableStream, ServerUnaryCall, ServerWritableStream,
-  status, UntypedHandleCall } from '@grpc/grpc-js';
+import {
+  sendUnaryData, ServerDuplexStream, ServerReadableStream, ServerUnaryCall, ServerWritableStream,
+  status, UntypedHandleCall
+} from '@grpc/grpc-js';
 import { randomBytes } from 'crypto';
+import { request } from 'http';
+// const fetch = require('node-fetch')
+import fetch from 'node-fetch'
+import net from 'net'
 
-import { GreeterServer, GreeterService, HelloRequest, HelloResponse } from '../models/helloworld';
+import { ByteChunk, GreeterServer, GreeterService, HelloRequest, HelloResponse } from '../models/helloworld';
 import { logger, ServiceError } from '../utils';
 
 /**
@@ -80,7 +86,7 @@ class Greeter implements GreeterServer {
 
     call.on('data', (req: HelloRequest) => {
       call.write(HelloResponse.fromJSON({
-        message: `${req.name} - ${randomBytes(5).toString('hex')}`,
+        message: `${req.name} FROM SERVER - ${randomBytes(5).toString('hex')}`,
       }));
     }).on('end', () => {
       call.end();
@@ -88,6 +94,46 @@ class Greeter implements GreeterServer {
       logger.error('sayHelloStream:', err);
     });
   }
+
+  public byteProxy(call: ServerDuplexStream<ByteChunk, ByteChunk>): void {
+    logger.info('byte proxy:', call.getPeer());
+
+    //  echo back
+    call.on('data', async (req: ByteChunk) => {
+      logger.info('received req')
+
+      var host = 'localhost',
+        port = 8000,
+        socket = net.connect(port, host, function () {
+          const request = req.bytes
+          let rawResponse = "";
+
+          // send http request:
+          socket.end(request);
+
+          // assume utf-8 encoding:
+          socket.setEncoding('utf-8');
+
+          // collect raw http message:
+          socket.on('data', function (chunk) {
+            rawResponse += chunk;
+          });
+          socket.on('end', function () {
+            console.log(rawResponse);
+            const b = Buffer.from(rawResponse)
+          call.write({ n: b.byteLength, bytes: b })
+          });
+
+        })
+          // const buf = await b.arrayBuffer()
+          // console.log(buf)
+          // call.write({ n: buf.byteLength, bytes: Buffer.from(buf) })
+        }).on('end', () => {
+          call.end();
+        }).on('error', (err: Error) => {
+          logger.error('ByteProxy:', err);
+        });
+    }
 }
 
 export {

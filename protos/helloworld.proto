@@ -8,13 +8,22 @@ package helloworld;
 // https://developers.google.com/protocol-buffers/docs/reference/google.protobuf
 import "google/protobuf/struct.proto";
 
-// https://developers.google.com/protocol-buffers/docs/style
+// SCUFFED ALERT
+message ByteChunk {
+  uint64 n = 1;
+  bytes bytes = 2;
+}
+
 service Greeter {
   rpc SayHello (HelloRequest) returns (HelloResponse);
   rpc SayHelloStreamRequest (stream HelloRequest) returns (HelloResponse) {}
   rpc SayHelloStreamResponse (HelloRequest) returns (stream HelloResponse) {}
   rpc SayHelloStream (stream HelloRequest) returns (stream HelloResponse) {}
+
+  rpc ByteProxy (stream ByteChunk) returns (stream ByteChunk) {}
 }
+
+
 
 message HelloRequest {
   string name = 1;

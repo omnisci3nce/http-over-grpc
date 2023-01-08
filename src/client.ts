@@ -2,8 +2,9 @@ import 'source-map-support/register';
 import { credentials, Metadata, ServiceError } from '@grpc/grpc-js';
 
 import { clientService } from './clientService';
-import { GreeterClient, HelloRequest, HelloResponse } from './models/helloworld';
+import { ByteChunk, GreeterClient, HelloRequest, HelloResponse } from './models/helloworld';
 import { logger } from './utils';
+import http from 'http'
 
 // https://github.com/grpc/grpc/blob/master/doc/keepalive.md
 // https://cloud.ibm.com/docs/blockchain-multicloud?topic=blockchain-multicloud-best-practices-app#best-practices-app-connections
@@ -18,7 +19,7 @@ logger.info('gRPC:GreeterClient', new Date().toLocaleString());
 
 let argv = 'world';
 if (process.argv.length >= 3) {
-  [,,argv] = process.argv;
+  [, , argv] = process.argv;
 }
 
 const param: HelloRequest = {
@@ -111,10 +112,37 @@ function exampleStream(): void {
   stream.end();
 }
 
+/*
+ 
+Browser 
+   |
+   | HTTP Request
+   \
+    -> Client 
+
+*/
+
+function openProxy(): void {
+
+  /**
+   * rpc ByteProxy
+   */
+  const duplexStream = client.byteProxy()
+  duplexStream
+    .on('data', (res: ByteChunk) => logger.info(`ByteProxy: received ${res.n} bytes`))
+    .on('end', () => logger.info('ByteProxy: End'))
+    .on('error', (err: Error) => logger.error('ByteProxy:', err));
+}
+
 (async (): Promise<void> => {
   try {
     if (argv === 'stream') {
       exampleStream();
+      return;
+    }
+
+    if (argv === 'proxy') {
+      openProxy();
       return;
     }
 
@@ -123,3 +151,51 @@ function exampleStream(): void {
     logger.error(err);
   }
 })();
+
+// const server = http.createServer((req, res) => {
+  // let origWrite: any
+  // const socket = req.socket;
+  // origWrite = socket.write;
+  // req.on('data', console.log)
+  // socket.on('data', console.log)
+  // socket.write = function (buffer, callback) {
+  //     console.log(buffer);
+  //   return origWrite(buffer, callback);
+  // }
+
+  // on any request
+//   res.writeHead(200)
+//   res.end('Hello from server\n')
+// })
+import net from 'net'
+const server = net.createServer((socket) => {
+  // create grpc bidi stream
+  const duplexStream = client.byteProxy()
+  duplexStream
+    .on('data', (res: ByteChunk) => {
+      logger.info(`ByteProxy: received ${res.n} bytes`)
+      console.log(res.bytes)
+      console.log(res.bytes.toString())
+      const responseMessage = `HTTP/1.1 200 OK
+Date: Sun, 10 Oct 2010 23:26:07 GMT
+Content-Type: text/html
+Content-Length: 15
+
+Hello, World!\n
+
+`
+      // socket.write(res.bytes)
+      socket.end(responseMessage)
+    })
+    .on('end', () => logger.info('ByteProxy: End'))
+    .on('error', (err: Error) => logger.error('ByteProxy:', err));
+
+  socket.on('data', (data) => {
+    console.log('CLIENT:', data)
+    duplexStream.write({
+      n: data.byteLength,
+      bytes: data
+    })
+  })
+})
+server.listen(8800)
