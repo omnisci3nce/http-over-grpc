@@ -1,0 +1,28 @@
+// https://developers.google.com/protocol-buffers/docs/proto3?hl=ko#json
+// https://developers.google.com/protocol-buffers/docs/reference/proto3-spec
+syntax = "proto3";
+
+// https://developers.google.com/protocol-buffers/docs/proto3#packages-and-name-resolution
+package byteproxy;
+
+// https://developers.google.com/protocol-buffers/docs/reference/google.protobuf
+// import "google/protobuf/struct.proto";
+
+// Send arbitrary data over the wire
+message ByteChunk {
+  uint64 n = 1;
+  bytes bytes = 2;
+}
+
+service ByteProxy {
+  rpc sendPing (Ping) returns (Pong);
+  rpc registerByteStream (stream ByteChunk) returns (stream ByteChunk) {}
+}
+
+message Ping {
+  string message = 1;
+}
+
+message Pong {
+  string message = 1;
+}

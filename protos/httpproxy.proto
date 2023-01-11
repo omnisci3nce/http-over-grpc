@@ -1,0 +1,18 @@
+syntax = "proto3";
+package httpproxy;
+
+message HTTPRequest {}
+message HTTPResponse {}
+
+service HTTPProxy {
+  rpc sendPing (Ping) returns (Pong);
+  rpc registerHttpStream (stream HTTPRequest) returns (stream HTTPResponse);
+}
+
+message Ping {
+  string message = 1;
+}
+
+message Pong {
+  string message = 1;
+}

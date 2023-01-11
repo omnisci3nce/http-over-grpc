@@ -1,9 +1,8 @@
 import 'source-map-support/register';
 import { Server, ServerCredentials } from '@grpc/grpc-js';
 
-import { HealthCheckResponse_ServingStatus } from './models/health';
-import { Greeter, GreeterService } from './services/Greeter';
-import { Health, HealthService, healthStatus } from './services/Health';
+import { ByteProxy, ByteProxyService } from './services/ByteProxy';
+//import { HTTPProxy, HTTPProxyService } from './services/HTTPProxy';
 import { logger } from './utils';
 
 // Do not use @grpc/proto-loader
@@ -12,8 +11,8 @@ const server = new Server({
   'grpc.max_send_message_length': -1,
 });
 
-server.addService(GreeterService, new Greeter());
-server.addService(HealthService, new Health());
+server.addService(ByteProxyService, new ByteProxy());
+//server.addService(HTTPProxyService, new HTTPProxy());
 server.bindAsync('0.0.0.0:50051', ServerCredentials.createInsecure(), (err: Error | null, bindPort: number) => {
   if (err) {
     throw err;
@@ -22,6 +21,3 @@ server.bindAsync('0.0.0.0:50051', ServerCredentials.createInsecure(), (err: Erro
   logger.info(`gRPC:Server:${bindPort}`, new Date().toLocaleString());
   server.start();
 });
-
-// Change service health status
-healthStatus.set('helloworld.Greeter', HealthCheckResponse_ServingStatus.NOT_SERVING);
