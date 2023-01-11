@@ -1,12 +1,11 @@
 import {
   sendUnaryData, ServerDuplexStream, ServerUnaryCall,
-  status, UntypedHandleCall,
+  UntypedHandleCall,
 } from '@grpc/grpc-js';
-import { randomBytes } from 'crypto';
 import net from 'net';
 
 import { ByteChunk, ByteProxyServer, ByteProxyService, Ping, Pong } from '../models/byteproxy';
-import { logger, ServiceError } from '../utils';
+import { logger } from '../utils';
 
 class ByteProxy implements ByteProxyServer {
   [method: string]: UntypedHandleCall;
@@ -20,7 +19,7 @@ class ByteProxy implements ByteProxyServer {
     const { message } = call.request;
     logger.info('pong:', message);
 
-    callback(null, Pong.fromJSON({ message: message }));
+    callback(null, Pong.fromJSON({ message }));
   }
 
   public registerByteStream(call: ServerDuplexStream<ByteChunk, ByteChunk>): void {

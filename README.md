@@ -32,6 +32,12 @@ npm start #= node dist/server
 npm run client #= node dist/client
 ```
 
+## Service
+
+```sh
+python3 -m http.server 8080
+```
+
 now make a request to localhost:8800 and it will be proxied over gRPC to the Server
 which will try and forward the request to port 8080. It will return the response
 back via gRPC and to the client, and ultimately to whoever initiated the request

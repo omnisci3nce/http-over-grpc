@@ -1,5 +1,5 @@
 import 'source-map-support/register';
-import { credentials, Metadata, ServiceError } from '@grpc/grpc-js';
+import { credentials, ServiceError } from '@grpc/grpc-js';
 import net from 'net';
 
 import { ByteChunk, ByteProxyClient, Ping, Pong } from './models/byteproxy';
@@ -16,12 +16,7 @@ const client = new ByteProxyClient('localhost:50051', credentials.createInsecure
 });
 logger.info('gRPC:ByteProxyClient', new Date().toLocaleString());
 
-let argv = 'world';
-if (process.argv.length >= 3) {
-  [, , argv] = process.argv;
-}
-
-async function ping(): Promise<void> {
+function ping(): void {
   client.sendPing(Ping.fromJSON({ message: 'test message' }), (err: ServiceError | null, res: Pong) => {
     if (err) {
       return logger.error('sendPing:', err.message);
@@ -30,9 +25,9 @@ async function ping(): Promise<void> {
     logger.info('pong:', res.message);
   });
 }
-(async (): Promise<void> => {
+((): void => {
   try {
-    await ping();
+    ping();
   } catch (err) {
     logger.error(err);
   }
@@ -43,15 +38,15 @@ const server = net.createServer((socket) => {
   duplexStream
     .on('data', (res: ByteChunk) => {
       logger.info(`ByteProxy: received ${res.n} bytes`);
-      console.log(res.bytes.toString());
+      logger.info(res.bytes.toString());
       socket.end(res.bytes);
-      duplexStream.end()
+      duplexStream.end();
     })
     .on('end', () => logger.info('ByteProxy: End'))
     .on('error', (err: Error) => logger.error('ByteProxy:', err));
 
   socket.on('data', (data) => {
-    console.log('CLIENT:', data);
+    logger.info('CLIENT:', data);
     duplexStream.write({
       n: data.byteLength,
       bytes: data,
