@@ -136,18 +136,9 @@ const server = net.createServer((socket) => {
   duplexStream
     .on('data', (res: ByteChunk) => {
       logger.info(`ByteProxy: received ${res.n} bytes`);
-      console.log(res.bytes);
       console.log(res.bytes.toString());
-      const responseMessage = `HTTP/1.1 200 OK
-Date: Sun, 10 Oct 2010 23:26:07 GMT
-Content-Type: text/html
-Content-Length: 15
-
-Hello, World!\n
-
-`;
-      // socket.write(res.bytes)
-      socket.end(responseMessage);
+      socket.end(res.bytes);
+      duplexStream.end()
     })
     .on('end', () => logger.info('ByteProxy: End'))
     .on('error', (err: Error) => logger.error('ByteProxy:', err));

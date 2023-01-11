@@ -12,7 +12,7 @@ class ByteProxy implements ByteProxyServer {
   [method: string]: UntypedHandleCall;
 
   /**
-   * Implements the SayHello RPC method.
+   * Implements the SendPing RPC method.
    */
   public sendPing(call: ServerUnaryCall<Ping, Pong>, callback: sendUnaryData<Pong>): void {
     logger.info('sayHello', Date.now());
@@ -30,8 +30,8 @@ class ByteProxy implements ByteProxyServer {
     call.on('data', (req: ByteChunk) => {
       logger.info('received req');
 
-      const host = 'localhost';
-      const port = 8000;
+      const host = '127.0.0.1';
+      const port = 8080;
       const socket = net.connect(port, host, () => {
         const request = req.bytes;
         let rawResponse = '';
