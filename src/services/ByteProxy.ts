@@ -15,7 +15,7 @@ class ByteProxy implements ByteProxyServer {
    * Implements the SendPing RPC method.
    */
   public sendPing(call: ServerUnaryCall<Ping, Pong>, callback: sendUnaryData<Pong>): void {
-    logger.info('sayHello', Date.now());
+    logger.info('received ping', Date.now());
 
     const { message } = call.request;
     logger.info('pong:', message);
